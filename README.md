@@ -25,6 +25,7 @@ Model nằm trong named volume, không đưa file lớn vào Git.
 
 | Dịch vụ | Địa chỉ từ Windows |
 |---|---|
+| Frontend | http://127.0.0.1:8080 |
 | API / Swagger | http://127.0.0.1:8000/docs |
 | API health / readiness | http://127.0.0.1:8000/health và /ready |
 | API metrics | http://127.0.0.1:8000/metrics |
@@ -34,11 +35,21 @@ Model nằm trong named volume, không đưa file lớn vào Git.
 | Redis của dự án | localhost:16379 (trong mạng Compose là redis:6379) |
 
 Redis dùng cổng 16379 để tránh trùng Redis có sẵn trên máy.
-Nếu cổng khác bị chiếm, đổi API_PORT, WORKER_PORT, POSTGRES_PORT hoặc REDIS_PORT
+Nếu cổng khác bị chiếm, đổi FRONTEND_PORT, API_PORT, WORKER_PORT, POSTGRES_PORT hoặc REDIS_PORT
 trong .env. Cập nhật URL dùng cho Python native/integration test theo cổng mới.
 Mật khẩu `change_me` chỉ phục vụ chạy cục bộ; thay POSTGRES_PASSWORD và
 DATABASE_URL tương ứng nếu cần. Các ký tự đặc biệt trong mật khẩu ở URL phải URL-encode.
 Không commit .env thật.
+
+Service `frontend` dùng nguyên Dockerfile của Thuận trong [PR #6](https://github.com/01PhamTien/ai-recognition-app/pull/6),
+build từ thư mục `frontend` tại commit `cae6c9c93dbc9d75a43fc2acfa656671eb37612f`
+trên GitHub vì nhánh hiện tại chưa có thư mục này. Build cần mạng để lấy mã nguồn;
+commit được cố định để không thay đổi image khi nhánh của Thuận cập nhật.
+Sau khi mã frontend được merge vào nhánh này, có thể đổi `build.context` của
+service thành `./frontend`, giữ `dockerfile: Dockerfile`.
+Compose truyền `VITE_API_BASE_URL` rỗng khi build để trình duyệt gọi `/jobs`
+cùng origin; Nginx chuyển tiếp tới `http://api:8000` trong mạng Compose.
+Frontend đợi API healthy và dùng healthcheck `/health` có sẵn trong Dockerfile.
 
 Kiểm tra health bằng PowerShell:
 
@@ -194,7 +205,8 @@ pytest.ini             Cấu hình test và markers
 Jenkinsfile            Pipeline kiểm tra cấu trúc repo hiện có
 ```
 
-Frontend và hạ tầng triển khai ngoài máy local thuộc các phần việc tiếp theo của nhóm.
+Frontend dùng Dockerfile của TV3-Thuận qua service `frontend` trong Compose.
+Hạ tầng triển khai ngoài máy local thuộc các phần việc tiếp theo của nhóm.
 Jenkinsfile hiện chỉ kiểm tra cấu trúc; các lệnh test ở trên dùng cho bàn giao TV2.
 
 ## Quy trình nhóm

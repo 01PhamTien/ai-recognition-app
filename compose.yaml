@@ -19,6 +19,21 @@ x-settings: &settings
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
 services:
+  frontend:
+    build:
+      # Reuse Thuan's frontend from PR #6 until it is available on this branch.
+      context: https://github.com/01PhamTien/ai-recognition-app.git#cae6c9c93dbc9d75a43fc2acfa656671eb37612f:frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    image: ai-recognition-frontend:local
+    environment:
+      API_UPSTREAM: http://api:8000
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
   db:
     image: postgres:16-alpine
     environment:
