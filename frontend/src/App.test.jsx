@@ -81,12 +81,28 @@ describe('image upload interface', () => {
 
   it('sends the selected image and displays the backend result', async () => {
     stubObjectUrls('blob:preview')
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ label: 'cat', confidence: 0.98 }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }),
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            job_id: 'job-123',
+            status: 'queued',
+            status_url: '/jobs/job-123',
+          }),
+          { status: 202, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            job_id: 'job-123',
+            status: 'completed',
+            predictions: [{ label: 'cat', confidence: 0.98 }],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
     render(<App />)
@@ -100,11 +116,16 @@ describe('image upload interface', () => {
     expect(await screen.findByRole('heading', { name: 'Kết quả nhận diện' })).toBeInTheDocument()
     expect(screen.getByText(/"label": "cat"/)).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8000/api/recognize',
+      'http://localhost:8000/jobs',
       expect.objectContaining({ method: 'POST' }),
     )
     const [, options] = fetchMock.mock.calls[0]
     expect(options.body.get('file')).toMatchObject({ name: 'cat.png', type: 'image/png' })
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/jobs/job-123',
+      { method: 'GET' },
+    )
   })
 
   it('shows backend errors instead of hiding a failed request', async () => {
@@ -112,10 +133,15 @@ describe('image upload interface', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ detail: 'Model chưa sẵn sàng.' }), {
-          status: 503,
-          headers: { 'content-type': 'application/json' },
-        }),
+        new Response(
+          JSON.stringify({
+            error: { code: 'internal_error', message: 'Model chưa sẵn sàng.' },
+          }),
+          {
+            status: 503,
+            headers: { 'content-type': 'application/json' },
+          },
+        ),
       ),
     )
     const user = userEvent.setup()

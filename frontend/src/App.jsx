@@ -58,6 +58,7 @@ export default function App() {
   const [error, setError] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isTakingLong, setIsTakingLong] = useState(false)
   const [result, setResult] = useState(null)
 
   useEffect(() => {
@@ -101,11 +102,14 @@ export default function App() {
     if (!selectedImage || isSubmitting) return
 
     setIsSubmitting(true)
+    setIsTakingLong(false)
     setError('')
     setResult(null)
 
     try {
-      const recognitionResult = await requestRecognition(selectedImage)
+      const recognitionResult = await requestRecognition(selectedImage, {
+        onLongRunning: () => setIsTakingLong(true),
+      })
       setResult(recognitionResult)
     } catch (requestError) {
       setError(
@@ -115,6 +119,7 @@ export default function App() {
       )
     } finally {
       setIsSubmitting(false)
+      setIsTakingLong(false)
     }
   }
 
@@ -276,7 +281,9 @@ export default function App() {
             </button>
             {isSubmitting && (
               <p className="api-notice" role="status">
-                Ảnh đang được gửi tới backend để xử lý.
+                {isTakingLong
+                  ? 'Tác vụ vẫn đang được xử lý. Vui lòng tiếp tục chờ kết quả.'
+                  : 'Ảnh đang được gửi tới backend để xử lý.'}
               </p>
             )}
 
