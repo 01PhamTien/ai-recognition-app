@@ -25,7 +25,7 @@ Model nằm trong named volume, không đưa file lớn vào Git.
 
 | Dịch vụ | Địa chỉ từ Windows |
 |---|---|
-| Frontend | http://127.0.0.1:8080 |
+| Frontend | http://127.0.0.1:8081 |
 | API / Swagger | http://127.0.0.1:8000/docs |
 | API health / readiness | http://127.0.0.1:8000/health và /ready |
 | API metrics | http://127.0.0.1:8000/metrics |
@@ -41,12 +41,7 @@ Mật khẩu `change_me` chỉ phục vụ chạy cục bộ; thay POSTGRES_PASS
 DATABASE_URL tương ứng nếu cần. Các ký tự đặc biệt trong mật khẩu ở URL phải URL-encode.
 Không commit .env thật.
 
-Service `frontend` dùng nguyên Dockerfile của Thuận trong [PR #6](https://github.com/01PhamTien/ai-recognition-app/pull/6),
-build từ thư mục `frontend` tại commit `cae6c9c93dbc9d75a43fc2acfa656671eb37612f`
-trên GitHub vì nhánh hiện tại chưa có thư mục này. Build cần mạng để lấy mã nguồn;
-commit được cố định để không thay đổi image khi nhánh của Thuận cập nhật.
-Sau khi mã frontend được merge vào nhánh này, có thể đổi `build.context` của
-service thành `./frontend`, giữ `dockerfile: Dockerfile`.
+Service `frontend` build trực tiếp từ thư mục `./frontend` trong cùng repository bằng Dockerfile của TV3. Nhờ vậy Frontend và Backend luôn được build từ cùng revision, không phụ thuộc vào commit hoặc nhánh GitHub bên ngoài.
 Compose truyền `VITE_API_BASE_URL` rỗng khi build để trình duyệt gọi `/jobs`
 cùng origin; Nginx chuyển tiếp tới `http://api:8000` trong mạng Compose.
 Frontend đợi API healthy và dùng healthcheck `/health` có sẵn trong Dockerfile.
@@ -205,7 +200,7 @@ pytest.ini             Cấu hình test và markers
 Jenkinsfile            Pipeline kiểm tra cấu trúc repo hiện có
 ```
 
-Frontend dùng Dockerfile của TV3-Thuận qua service `frontend` trong Compose.
+Frontend của TV3-Thuận nằm trong thư mục `frontend/` và được build trực tiếp bởi service `frontend` trong Compose.
 Hạ tầng triển khai ngoài máy local thuộc các phần việc tiếp theo của nhóm.
 Jenkinsfile hiện chỉ kiểm tra cấu trúc; các lệnh test ở trên dùng cho bàn giao TV2.
 
