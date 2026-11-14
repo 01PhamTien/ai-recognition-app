@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+.pytest_cache
+.test-tmp
+**/__pycache__
+**/*.pyc
+data
+models/*.onnx
+models/synset.txt
+models/LICENSE.onnx-models
+*.log

@@ -1,0 +1,121 @@
+name: ai-recognition
+
+x-settings: &settings
+  DATABASE_URL: postgresql+psycopg://app:${POSTGRES_PASSWORD:-change_me}@db:5432/ai_app
+  REDIS_URL: redis://redis:6379/0
+  REDIS_STREAM: ${REDIS_STREAM:-recognition:jobs}
+  REDIS_GROUP: ${REDIS_GROUP:-recognition-workers}
+  UPLOAD_DIR: /app/data/uploads
+  MODEL_PATH: /app/models/mobilenetv2-7.onnx
+  LABELS_PATH: /app/models/synset.txt
+  MODEL_VERSION: ${MODEL_VERSION:-mobilenetv2-7-v1}
+  MODEL_SHA256: ${MODEL_SHA256:-c1c513582d56afceff8516c73804e484c81c6a830712ab6d682253f4a3cd042f}
+  LABELS_SHA256: ${LABELS_SHA256:-acf75ef0abe89694b19056e0796401068b459c457baa30335f240c7692857355}
+  MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5242880}
+  MAX_IMAGE_PIXELS: ${MAX_IMAGE_PIXELS:-20000000}
+  CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173","http://127.0.0.1:5173"]}
+  TOP_K: ${TOP_K:-5}
+  JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-300}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ai_app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d ai_app"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.2-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "always"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-16379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  db-init:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: ai-recognition-api:local
+    command: ["python", "-m", "backend.app.init_db"]
+    environment: *settings
+    depends_on:
+      db:
+        condition: service_healthy
+  model-init:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    image: ai-recognition-worker:local
+    command: ["python", "scripts/download_model.py", "--directory", "/app/model-assets"]
+    volumes:
+      - model-data:/app/model-assets
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: ai-recognition-api:local
+    environment:
+      <<: *settings
+      SERVICE_NAME: api
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    volumes:
+      - uploads:/app/data/uploads
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    image: ai-recognition-worker:local
+    environment:
+      <<: *settings
+      SERVICE_NAME: worker
+      MODEL_PATH: /app/model-assets/mobilenetv2-7.onnx
+      LABELS_PATH: /app/model-assets/synset.txt
+    ports:
+      - "127.0.0.1:${WORKER_PORT:-8001}:8001"
+    volumes:
+      - uploads:/app/data/uploads
+      - model-data:/app/model-assets
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      model-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/ready')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redis-data:
+  uploads:
+  model-data:
