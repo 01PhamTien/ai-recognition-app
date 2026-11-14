@@ -1,0 +1,22 @@
+{
+  "model": "MobileNetV2",
+  "version": "mobilenetv2-7-v1",
+  "opset": 7,
+  "license": "Apache-2.0",
+  "source": "https://github.com/onnx/models/tree/c5cae0f1942c8d7727372c7b1f6b485aa39e4421/validated/vision/classification/mobilenet",
+  "revision": "c5cae0f1942c8d7727372c7b1f6b485aa39e4421",
+  "artifacts": {
+    "mobilenetv2-7.onnx": {
+      "url": "https://media.githubusercontent.com/media/onnx/models/c5cae0f1942c8d7727372c7b1f6b485aa39e4421/validated/vision/classification/mobilenet/model/mobilenetv2-7.onnx",
+      "sha256": "c1c513582d56afceff8516c73804e484c81c6a830712ab6d682253f4a3cd042f"
+    },
+    "synset.txt": {
+      "url": "https://raw.githubusercontent.com/onnx/models/c5cae0f1942c8d7727372c7b1f6b485aa39e4421/validated/vision/classification/synset.txt",
+      "sha256": "acf75ef0abe89694b19056e0796401068b459c457baa30335f240c7692857355"
+    },
+    "LICENSE.onnx-models": {
+      "url": "https://raw.githubusercontent.com/onnx/models/c5cae0f1942c8d7727372c7b1f6b485aa39e4421/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    }
+  }
+}

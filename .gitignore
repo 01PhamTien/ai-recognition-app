@@ -3,6 +3,7 @@
 !.env.example
 .venv/
 __pycache__/
+.pytest_cache/
 *.pyc
 node_modules/
 dist/
@@ -11,3 +12,8 @@ build/
 *.onnx
 *.pt
 *.pth
+data/
+models/*.part
+models/synset.txt
+models/LICENSE.onnx-models
+.test-tmp/
