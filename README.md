@@ -209,6 +209,31 @@ Frontend dùng Dockerfile của TV3-Thuận qua service `frontend` trong Compose
 Hạ tầng triển khai ngoài máy local thuộc các phần việc tiếp theo của nhóm.
 Jenkinsfile hiện chỉ kiểm tra cấu trúc; các lệnh test ở trên dùng cho bàn giao TV2.
 
+
+## Frontend (TV3 - Thuận)
+
+Frontend React + Vite cung cấp giao diện tải ảnh và hiển thị kết quả nhận diện. Người dùng có thể chọn hoặc kéo-thả ảnh JPG/PNG, xem trước, thay/xóa ảnh; giao diện kiểm tra file rỗng và giới hạn 5 MiB trước khi gửi.
+
+Frontend gửi ảnh bằng `multipart/form-data` (field `file`) tới `POST /jobs`, nhận `job_id` và `status_url`, sau đó polling trạng thái đến khi `completed` hoặc `failed`. Kết quả hiển thị danh sách nhãn, độ tin cậy và phiên bản model; lỗi được hiển thị thành thông báo dễ hiểu. Hợp đồng API chi tiết nằm trong [docs/API.md](docs/API.md).
+
+Chạy frontend độc lập khi API đang hoạt động:
+
+```powershell
+Set-Location frontend
+npm ci
+Copy-Item .env.example .env
+npm run dev
+```
+
+Vite mặc định chạy tại `http://localhost:5173`; `.env.example` cấu hình API tại `http://localhost:8000`. Chạy kiểm thử và build:
+
+```powershell
+npm test
+npm run build
+```
+
+Dockerfile multi-stage build static assets bằng Node.js và phục vụ qua Nginx unprivileged tại cổng 8080. Nginx proxy đường dẫn `/jobs` tới `API_UPSTREAM` (mặc định `http://api:8000`); hai service cần cùng Docker network. Healthcheck frontend ở `/health`. Hướng dẫn chi tiết: [frontend/README.md](frontend/README.md).
+
 ## Quy trình nhóm
 
 1. Issue và branch dạng `feat/ten-cong-viec`.
