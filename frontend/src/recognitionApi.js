@@ -143,7 +143,10 @@ export async function requestRecognition(
   let longRunningNotified = false
 
   while (true) {
-    const statusResponse = await fetchResponse(fetchImpl, statusUrl, { method: 'GET' })
+    const statusResponse = await fetchResponse(fetchImpl, statusUrl, {
+      method: 'GET',
+      cache: 'no-store',
+    })
     const job = await readResponseBody(statusResponse)
 
     if (!statusResponse.ok) {
@@ -168,7 +171,7 @@ export async function requestRecognition(
   }
 }
 
-export function formatRecognitionResult(result) {
-  if (typeof result === 'string') return result
-  return JSON.stringify(result, null, 2)
+export function formatConfidence(confidence) {
+  if (typeof confidence !== 'number' || !Number.isFinite(confidence)) return ''
+  return `${(confidence * 100).toFixed(1)}%`
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MAX_IMAGE_SIZE_MB, validateImage } from './imageValidation.js'
-import { formatRecognitionResult, requestRecognition } from './recognitionApi.js'
+import { formatConfidence, requestRecognition } from './recognitionApi.js'
 
 function ImageGlyph({ className = '' }) {
   return (
@@ -294,7 +294,25 @@ export default function App() {
                 className="result-panel"
               >
                 <h3 id="result-title">Kết quả nhận diện</h3>
-                <pre>{formatRecognitionResult(result)}</pre>
+                {Array.isArray(result.predictions) && result.predictions.length > 0 ? (
+                  <ol className="prediction-list">
+                    {result.predictions.map((prediction, index) => (
+                      <li key={`${prediction.class_id ?? 'label'}-${prediction.label ?? index}`}>
+                        <span className="prediction-label">
+                          {prediction.label || 'Không rõ nhãn'}
+                        </span>
+                        <span className="prediction-confidence">
+                          {formatConfidence(prediction.confidence)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="empty-predictions">Không tìm thấy nhãn phù hợp trong ảnh.</p>
+                )}
+                {result.model_version ? (
+                  <p className="model-version">Mô hình: {result.model_version}</p>
+                ) : null}
               </section>
             )}
           </div>

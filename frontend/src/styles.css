@@ -483,21 +483,46 @@ h1 {
 }
 
 .result-panel h3 {
+  margin: 0;
   color: #355d42;
   font-family: 'Manrope', sans-serif;
   font-size: 13px;
 }
 
-.result-panel pre {
-  overflow: auto;
-  max-height: 300px;
-  margin: 10px 0 0;
+.prediction-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prediction-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #e3eee4;
   color: #34483a;
-  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+
+.prediction-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.prediction-confidence {
+  color: #355d42;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.empty-predictions,
+.model-version {
+  margin: 10px 0 0;
+  color: #5d7264;
   font-size: 12px;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  line-height: 1.5;
 }
 
 .privacy-note {

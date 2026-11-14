@@ -98,7 +98,8 @@ describe('image upload interface', () => {
           JSON.stringify({
             job_id: 'job-123',
             status: 'completed',
-            predictions: [{ label: 'cat', confidence: 0.98 }],
+            predictions: [{ class_id: 281, label: 'cat', confidence: 0.98 }],
+            model_version: 'mobilenetv2-7-v1',
           }),
           { status: 200, headers: { 'content-type': 'application/json' } },
         ),
@@ -114,18 +115,19 @@ describe('image upload interface', () => {
     await user.click(screen.getByRole('button', { name: /Gửi yêu cầu nhận diện/ }))
 
     expect(await screen.findByRole('heading', { name: 'Kết quả nhận diện' })).toBeInTheDocument()
-    expect(screen.getByText(/"label": "cat"/)).toBeInTheDocument()
+    expect(screen.getByText('cat')).toBeInTheDocument()
+    expect(screen.getByText('98.0%')).toBeInTheDocument()
+    expect(screen.getByText('Mô hình: mobilenetv2-7-v1')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8000/jobs',
       expect.objectContaining({ method: 'POST' }),
     )
     const [, options] = fetchMock.mock.calls[0]
     expect(options.body.get('file')).toMatchObject({ name: 'cat.png', type: 'image/png' })
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'http://localhost:8000/jobs/job-123',
-      { method: 'GET' },
-    )
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:8000/jobs/job-123', {
+      method: 'GET',
+      cache: 'no-store',
+    })
   })
 
   it('shows backend errors instead of hiding a failed request', async () => {

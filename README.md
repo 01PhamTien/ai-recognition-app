@@ -24,4 +24,4 @@
 ## Trạng thái triển khai
 - Frontend hỗ trợ JPG/PNG, kéo-thả, xem trước, thay ảnh và kiểm tra giới hạn 5 MiB theo backend.
 - Frontend gửi `multipart/form-data` (field `file`) tới `POST /jobs`, nhận `job_id`/`status_url` rồi poll trạng thái.
-- Dockerfile frontend build static assets; Nginx unprivileged phục vụ cổng 8080 và proxy `/jobs` tới API qua `API_UPSTREAM`.
+- Dockerfile frontend build static assets; Nginx unprivileged phục vụ cổng 8080 và proxy `/jobs` tới API qua `API_UPSTREAM`, phân giải tên service lúc chạy.

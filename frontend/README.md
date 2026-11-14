@@ -42,9 +42,8 @@ VITE_API_BASE_URL=http://localhost:8000
 ```
 
 API hợp đồng được mô tả trong [docs/API.md của PR backend #5](https://github.com/01PhamTien/ai-recognition-app/blob/feat/backend-nhan-dien-anh/docs/API.md).
-Kết quả hoàn tất gồm trạng thái, danh sách `predictions` và thông tin model; job lỗi trả `error.code` và
-`error.message`. Các lỗi HTTP khi tạo/truy vấn job có dạng
-`{"error":{"code":"...","message":"..."}}`.
+Kết quả `completed` gồm danh sách `predictions` (`label`, `confidence`, `class_id`) và `model_version`. Giao diện hiển thị nhãn cùng độ tin cậy, không hiển thị JSON thô. Job `failed` trả `error.code` và `error.message` trong HTTP 200. Các lỗi HTTP khi tạo hoặc truy vấn job có dạng
+`{"error":{"code":"...","message":"..."}}`. Frontend không gửi lại `POST /jobs` khi lỗi mạng không rõ kết quả, vì mỗi lần gửi tạo một job mới.
 
 ```json
 {
@@ -76,7 +75,9 @@ docker run --rm --network ai-recognition_default -e API_UPSTREAM=http://api:8000
 ```
 
 Mở `http://localhost:8080`. Nginx phục vụ SPA và chuyển tiếp `/jobs` tới
-`API_UPSTREAM`; do đó API và frontend cần cùng Docker network. Đổi giá trị
-`API_UPSTREAM` khi service API có tên hoặc địa chỉ khác. Image chạy bằng user
-không phải root, nhận upload đến 6 MiB (đủ cho giới hạn file 5 MiB cộng
-multipart overhead), và có health check tại `/health`.
+`API_UPSTREAM`. Biến này là origin của API, không có dấu `/` cuối, ví dụ
+`http://api:8000`. Nginx phân giải tên service lúc có request qua DNS của Docker
+(`127.0.0.11`), nên frontend vẫn nối được backend khi container `api` lên sau.
+Hai container phải cùng Docker network. Image chạy bằng user không phải root,
+nhận upload đến 6 MiB (đủ cho giới hạn file 5 MiB cộng multipart overhead), và
+có health check tại `/health`.

@@ -53,11 +53,10 @@ describe('requestRecognition', () => {
       'http://localhost:8000/jobs',
       expect.objectContaining({ method: 'POST' }),
     )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'http://localhost:8000/jobs/job-123',
-      { method: 'GET' },
-    )
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:8000/jobs/job-123', {
+      method: 'GET',
+      cache: 'no-store',
+    })
     expect(fetchMock).toHaveBeenCalledTimes(4)
     expect(sleepMock).toHaveBeenCalledTimes(2)
     expect(sleepMock).toHaveBeenNthCalledWith(1, 1000)
@@ -170,6 +169,9 @@ describe('requestRecognition', () => {
       '/jobs',
       expect.objectContaining({ method: 'POST' }),
     )
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/jobs/job-123', { method: 'GET' })
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/jobs/job-123', {
+      method: 'GET',
+      cache: 'no-store',
+    })
   })
 })
