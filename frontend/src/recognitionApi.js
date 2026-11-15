@@ -7,6 +7,10 @@ function getApiBaseUrl() {
     return configuredBaseUrl.trim().replace(/\/+$/, '')
   }
 
+  if (import.meta.env.PROD) {
+    return ''
+  }
+
   return 'http://localhost:8000'
 }
 

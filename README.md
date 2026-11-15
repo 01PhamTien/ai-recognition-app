@@ -195,13 +195,21 @@ scripts/
 docs/
   API.md               Hợp đồng frontend TV3
   ARCHITECTURE.md      Luồng, schema, model và giới hạn vận hành
+  TV2-BAN-GIAO.md      Bàn giao backend TV2
+  TV3-K8S-BAN-GIAO.md  Bàn giao Kubernetes frontend TV3
+k8s/
+  frontend-configmap.yaml   ConfigMap biến runtime (API_UPSTREAM)
+  frontend-deployment.yaml  Deployment frontend (GHCR image, probes, resources)
+  frontend-service.yaml     Service ClusterIP cổng 8080
+  frontend.yaml             Manifest gộp toàn bộ Frontend
+  README.md                 Hướng dẫn chi tiết triển khai Kubernetes
 compose.yaml           Stack chạy cục bộ
 pytest.ini             Cấu hình test và markers
 Jenkinsfile            Pipeline kiểm tra cấu trúc repo hiện có
 ```
 
 Frontend của TV3-Thuận nằm trong thư mục `frontend/` và được build trực tiếp bởi service `frontend` trong Compose.
-Hạ tầng triển khai ngoài máy local thuộc các phần việc tiếp theo của nhóm.
+Hạ tầng Kubernetes Frontend được quản lý trong thư mục `k8s/` và tài liệu bàn giao tại [docs/TV3-K8S-BAN-GIAO.md](docs/TV3-K8S-BAN-GIAO.md).
 Jenkinsfile hiện chỉ kiểm tra cấu trúc; các lệnh test ở trên dùng cho bàn giao TV2.
 
 
@@ -228,6 +236,23 @@ npm run build
 ```
 
 Dockerfile multi-stage build static assets bằng Node.js và phục vụ qua Nginx unprivileged tại cổng 8080. Nginx proxy đường dẫn `/jobs` tới `API_UPSTREAM` (mặc định `http://api:8000`); hai service cần cùng Docker network. Healthcheck frontend ở `/health`. Hướng dẫn chi tiết: [frontend/README.md](frontend/README.md).
+
+### Triển khai Frontend trên Kubernetes
+
+Manifest triển khai Frontend nằm trong thư mục `k8s/`:
+- Image chính thức: `ghcr.io/01phamtien/ai-recognition-frontend:latest` (publish bởi Jenkins).
+- Cấu hình runtime: `API_UPSTREAM=http://ai-recognition-api:8000` quản lý qua ConfigMap.
+- Liveness/Readiness probes tại `GET /health` cổng 8080.
+- Service ClusterIP cổng 8080, sẵn sàng tích hợp với Ingress của TV4 (Định).
+
+Triển khai và kiểm thử nhanh trên Kubernetes:
+
+```powershell
+kubectl apply -f k8s/frontend.yaml
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke-k8s.ps1
+```
+
+Chi tiết phối hợp Ingress và runbook: [k8s/README.md](k8s/README.md) và biên bản bàn giao [docs/TV3-K8S-BAN-GIAO.md](docs/TV3-K8S-BAN-GIAO.md).
 
 ## Quy trình nhóm
 

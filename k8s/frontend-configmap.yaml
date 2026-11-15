@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  labels:
+    app.kubernetes.io/name: ai-recognition-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: ai-recognition
+    app: ai-recognition-frontend
+data:
+  # Địa chỉ service Backend API trong cluster Kubernetes.
+  # Mặc định kết nối tới Service "ai-recognition-api" cổng 8000 trong cùng namespace.
+  # Nếu Backend nằm ở namespace khác, dùng FQDN dạng: http://ai-recognition-api.<namespace>.svc.cluster.local:8000
+  API_UPSTREAM: "http://ai-recognition-api:8000"
