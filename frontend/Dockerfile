@@ -9,7 +9,7 @@ ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:alpine
+FROM nginx/nginx-unprivileged:alpine3.24
 
 ENV API_UPSTREAM=http://api:8000
 COPY nginx.conf /etc/nginx/templates/default.conf.template
