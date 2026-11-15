@@ -104,6 +104,31 @@ pipeline {
                 '''
             }
         }
+
+        stage('Push Images - GHCR') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'ghcr-credentials',
+                    usernameVariable: 'GHCR_USERNAME',
+                    passwordVariable: 'GHCR_TOKEN'
+                )]) {
+                    sh '''
+                        set +x
+                        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+
+                        docker tag "ai-recognition-api:$IMAGE_TAG" "ghcr.io/01phamtien/ai-recognition-api:$IMAGE_TAG"
+                        docker tag "ai-recognition-worker:$IMAGE_TAG" "ghcr.io/01phamtien/ai-recognition-worker:$IMAGE_TAG"
+                        docker tag "ai-recognition-frontend:$IMAGE_TAG" "ghcr.io/01phamtien/ai-recognition-frontend:$IMAGE_TAG"
+
+                        docker push "ghcr.io/01phamtien/ai-recognition-api:$IMAGE_TAG"
+                        docker push "ghcr.io/01phamtien/ai-recognition-worker:$IMAGE_TAG"
+                        docker push "ghcr.io/01phamtien/ai-recognition-frontend:$IMAGE_TAG"
+
+                        docker logout ghcr.io
+                    '''
+                }
+            }
+        }
     }
 
     post {
