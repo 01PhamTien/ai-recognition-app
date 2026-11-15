@@ -41,7 +41,7 @@ pipeline {
             steps {
                 sh '''
                     . .venv-ci/bin/activate
-                    pytest -q backend/tests
+                    PYTHONPATH="$WORKSPACE" python -m pytest -q backend/tests
                 '''
                 dir('frontend') {
                     sh '''
