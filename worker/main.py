@@ -12,7 +12,11 @@ from starlette.responses import JSONResponse
 
 from backend.app.config import Settings
 from backend.app.database import make_engine, make_session_factory
-from backend.app.observability import Metrics, configure_logging, install_http_observability
+from backend.app.observability import (
+    Metrics,
+    configure_logging,
+    install_http_observability,
+)
 from worker.consumer import Worker
 from worker.inference import MobileNetPredictor
 
