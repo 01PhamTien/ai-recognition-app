@@ -4,9 +4,9 @@ from pathlib import Path
 from threading import Event
 from uuid import UUID, uuid4
 
+from redis.exceptions import RedisError
 from sqlalchemy import or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
-from redis.exceptions import RedisError
 
 from backend.app.models import Job, utcnow
 from backend.app.queue import dispatch_pending, ensure_group
