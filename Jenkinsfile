@@ -4,45 +4,117 @@ pipeline {
     options {
         timestamps()
         disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    environment {
+        IMAGE_TAG = "build-${BUILD_NUMBER}"
     }
 
     stages {
-        stage('Kiem tra ma nguon') {
+        stage('Checkout') {
             steps {
-                echo 'Bat dau kiem tra repository AI Recognition'
-                sh 'git --version'
-                sh 'pwd'
-            }
-        }
-
-        stage('Kiem tra cau truc du an') {
-            steps {
+                checkout scm
                 script {
-                    if (!fileExists('README.md')) {
-                        error 'Khong tim thay README.md'
-                    }
-                    if (!fileExists('.gitignore')) {
-                        error 'Khong tim thay .gitignore'
-                    }
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
                 }
-                echo 'README.md va .gitignore da ton tai'
-                sh 'ls -la'
+                echo "Dang kiem tra commit voi image tag ${IMAGE_TAG}"
             }
         }
 
-        stage('Hoan tat') {
+        stage('Lint - Python') {
             steps {
-                echo 'Kiem tra ma nguon thanh cong!'
+                sh '''
+                    python3 -m venv .venv-ci
+                    . .venv-ci/bin/activate
+                    python -m pip install --upgrade pip
+                    pip install -r backend/requirements-dev.txt
+                    ruff check backend worker scripts
+                '''
+            }
+        }
+
+        stage('Unit Test') {
+            steps {
+                sh '''
+                    . .venv-ci/bin/activate
+                    pytest -q backend/tests
+                '''
+                dir('frontend') {
+                    sh '''
+                        npm ci
+                        npm test
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh '''
+                    docker build -f backend/Dockerfile -t "ai-recognition-api:$IMAGE_TAG" .
+                    docker build -f worker/Dockerfile -t "ai-recognition-worker:$IMAGE_TAG" .
+                    docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL= -t "ai-recognition-frontend:$IMAGE_TAG" ./frontend
+                '''
+            }
+        }
+
+        stage('Security Scan - Gitleaks') {
+            steps {
+                sh '''
+                    WORKSPACE_IN_VOLUME="/jenkins-home${WORKSPACE#/var/jenkins_home}"
+                    docker run --rm \
+                      -v jenkins_home:/jenkins-home \
+                      -w "$WORKSPACE_IN_VOLUME" \
+                      zricethezav/gitleaks:latest \
+                      detect --source . --no-git --redact
+                '''
+            }
+        }
+
+        stage('Security Scan - Trivy') {
+            steps {
+                sh '''
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      aquasec/trivy:latest image \
+                      --exit-code 1 \
+                      --severity CRITICAL \
+                      --ignore-unfixed \
+                      "ai-recognition-api:$IMAGE_TAG"
+
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      aquasec/trivy:latest image \
+                      --exit-code 1 \
+                      --severity CRITICAL \
+                      --ignore-unfixed \
+                      "ai-recognition-worker:$IMAGE_TAG"
+
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      aquasec/trivy:latest image \
+                      --exit-code 1 \
+                      --severity CRITICAL \
+                      --ignore-unfixed \
+                      "ai-recognition-frontend:$IMAGE_TAG"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline thanh cong!'
+            echo 'CI thanh cong: lint, unit test, build image va security scan deu dat.'
         }
         failure {
-            echo 'Pipeline that bai. Hay kiem tra Console Output.'
+            echo 'CI that bai. Mo Console Output de xem stage va loi cu the.'
+        }
+        always {
+            echo "Ket thuc build cho image tag ${IMAGE_TAG}"
         }
     }
 }
