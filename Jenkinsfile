@@ -8,21 +8,24 @@ pipeline {
     }
 
     environment {
-        IMAGE_TAG = "${GIT_COMMIT}"
-        BACKEND_IMAGE = "ai-recognition-api:${GIT_COMMIT}"
-        WORKER_IMAGE = "ai-recognition-worker:${GIT_COMMIT}"
-        FRONTEND_IMAGE = "ai-recognition-frontend:${GIT_COMMIT}"
+        IMAGE_TAG = "build-${BUILD_NUMBER}"
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo "Dang kiem tra commit ${GIT_COMMIT}"
+                script {
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
+                }
+                echo "Dang kiem tra commit voi image tag ${IMAGE_TAG}"
             }
         }
 
-        stage('Lint') {
+        stage('Lint - Python') {
             steps {
                 sh '''
                     python3 -m venv .venv-ci
@@ -31,12 +34,6 @@ pipeline {
                     pip install -r backend/requirements-dev.txt
                     ruff check backend worker scripts
                 '''
-                dir('frontend') {
-                    sh '''
-                        npm ci
-                        npm run build
-                    '''
-                }
             }
         }
 
@@ -47,7 +44,10 @@ pipeline {
                     pytest -q backend/tests
                 '''
                 dir('frontend') {
-                    sh 'npm test'
+                    sh '''
+                        npm ci
+                        npm test
+                    '''
                 }
             }
         }
@@ -55,9 +55,9 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 sh '''
-                    docker build -f backend/Dockerfile -t "$BACKEND_IMAGE" .
-                    docker build -f worker/Dockerfile -t "$WORKER_IMAGE" .
-                    docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL= -t "$FRONTEND_IMAGE" ./frontend
+                    docker build -f backend/Dockerfile -t "ai-recognition-api:$IMAGE_TAG" .
+                    docker build -f worker/Dockerfile -t "ai-recognition-worker:$IMAGE_TAG" .
+                    docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL= -t "ai-recognition-frontend:$IMAGE_TAG" ./frontend
                 '''
             }
         }
@@ -84,7 +84,7 @@ pipeline {
                       --exit-code 1 \
                       --severity CRITICAL \
                       --ignore-unfixed \
-                      "$BACKEND_IMAGE"
+                      "ai-recognition-api:$IMAGE_TAG"
 
                     docker run --rm \
                       -v /var/run/docker.sock:/var/run/docker.sock \
@@ -92,7 +92,7 @@ pipeline {
                       --exit-code 1 \
                       --severity CRITICAL \
                       --ignore-unfixed \
-                      "$WORKER_IMAGE"
+                      "ai-recognition-worker:$IMAGE_TAG"
 
                     docker run --rm \
                       -v /var/run/docker.sock:/var/run/docker.sock \
@@ -100,7 +100,7 @@ pipeline {
                       --exit-code 1 \
                       --severity CRITICAL \
                       --ignore-unfixed \
-                      "$FRONTEND_IMAGE"
+                      "ai-recognition-frontend:$IMAGE_TAG"
                 '''
             }
         }
@@ -114,7 +114,7 @@ pipeline {
             echo 'CI that bai. Mo Console Output de xem stage va loi cu the.'
         }
         always {
-            echo "Ket thuc build cho commit ${GIT_COMMIT}"
+            echo "Ket thuc build cho image tag ${IMAGE_TAG}"
         }
     }
 }
