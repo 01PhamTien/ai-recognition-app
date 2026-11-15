@@ -4,7 +4,9 @@ from threading import Thread
 
 from fastapi import FastAPI
 from redis import Redis
+from redis.exceptions import RedisError
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse
 
@@ -65,7 +67,7 @@ def create_app(settings=None, sessions=None, redis_client=None, predictor=None, 
             with sessions() as session:
                 session.execute(text("SELECT 1"))
             redis.ping()
-        except Exception:
+        except (SQLAlchemyError, RedisError):
             return JSONResponse({"error": {"code": "dependency_unavailable", "message": "PostgreSQL hoặc Redis chưa sẵn sàng."}}, status_code=503)
         return {"status": "ready"}
 

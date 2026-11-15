@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, File, UploadFile
@@ -9,9 +10,9 @@ from redis import Redis
 from redis.exceptions import RedisError
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
-from starlette.concurrency import run_in_threadpool
 
 from backend.app.body_limit import UploadBodyLimit
 from backend.app.config import Settings
@@ -19,7 +20,11 @@ from backend.app.database import make_engine, make_session_factory
 from backend.app.errors import APIError
 from backend.app.images import validate_image
 from backend.app.models import Job
-from backend.app.observability import Metrics, configure_logging, install_http_observability
+from backend.app.observability import (
+    Metrics,
+    configure_logging,
+    install_http_observability,
+)
 from backend.app.queue import dispatch_pending
 from backend.app.schemas import ErrorResponse, JobAccepted, JobResponse
 
@@ -113,7 +118,7 @@ def create_app(settings=None, sessions=None, redis_client=None) -> FastAPI:
     errors = {code: {"model": ErrorResponse} for code in (413, 415, 422, 503)}
 
     @app.post("/jobs", status_code=202, response_model=JobAccepted, responses=errors)
-    async def upload_image(file: UploadFile = File(...)):
+    async def upload_image(file: Annotated[UploadFile, File()]):
         try:
             data = await file.read(settings.max_upload_bytes + 1)
             width, height, extension = await run_in_threadpool(

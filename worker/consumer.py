@@ -4,7 +4,9 @@ from pathlib import Path
 from threading import Event
 from uuid import UUID, uuid4
 
+from redis.exceptions import RedisError
 from sqlalchemy import or_, select, update
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.app.models import Job, utcnow
 from backend.app.queue import dispatch_pending, ensure_group
@@ -67,7 +69,7 @@ class Worker:
         try:
             with self.metrics.inference.time():
                 predictions = self.predictor.predict(self.image_path(image_name))
-        except Exception as exc:
+        except (OSError, ValueError, RuntimeError) as exc:
             error = {"code": "inference_failed", "message": "Không thể nhận diện ảnh."}
             logger.error("inference_failed", extra={"job_id": job_id, "error_type": type(exc).__name__})
         status = "failed" if error else "completed"
@@ -119,7 +121,7 @@ class Worker:
         while not self.stop.is_set():
             try:
                 self.tick()
-            except Exception as exc:
+            except (RedisError, SQLAlchemyError, OSError, RuntimeError) as exc:
                 self.last_success = 0
                 logger.error("worker_retry", extra={"error_type": type(exc).__name__})
                 self.stop.wait(2)

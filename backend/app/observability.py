@@ -2,17 +2,23 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import perf_counter
 
-from prometheus_client import CollectorRegistry, Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Histogram,
+    generate_latest,
+)
 from starlette.responses import Response
 
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "service": getattr(record, "service", os.getenv("SERVICE_NAME", "api")),
             "logger": record.name,
