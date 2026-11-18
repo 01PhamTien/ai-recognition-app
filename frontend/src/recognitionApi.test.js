@@ -174,4 +174,34 @@ describe('requestRecognition', () => {
       cache: 'no-store',
     })
   })
+
+  it('defaults to same-origin jobs proxy in production when VITE_API_BASE_URL is not set', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', undefined)
+    vi.stubEnv('PROD', true)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { job_id: 'job-prod', status: 'queued', status_url: '/jobs/job-prod' },
+          202,
+        ),
+      )
+      .mockResolvedValueOnce(jsonResponse({ status: 'completed', predictions: [] }))
+
+    await requestRecognition(imageFile(), {
+      fetchImpl: fetchMock,
+      sleepImpl: vi.fn(),
+    })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/jobs',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/jobs/job-prod', {
+      method: 'GET',
+      cache: 'no-store',
+    })
+    vi.unstubAllEnvs()
+  })
 })

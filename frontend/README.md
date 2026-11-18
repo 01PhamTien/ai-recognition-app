@@ -76,8 +76,18 @@ docker run --rm --network ai-recognition_default -e API_UPSTREAM=http://api:8000
 
 Mở `http://localhost:8080`. Nginx phục vụ SPA và chuyển tiếp `/jobs` tới
 `API_UPSTREAM`. Biến này là origin của API, không có dấu `/` cuối, ví dụ
-`http://api:8000`. Nginx phân giải tên service lúc có request qua DNS của Docker
-(`127.0.0.11`), nên frontend vẫn nối được backend khi container `api` lên sau.
-Hai container phải cùng Docker network. Image chạy bằng user không phải root,
+`http://api:8000` (Docker Compose) hoặc `http://ai-recognition-api:8000` (Kubernetes).
+Nginx sử dụng DNS của hệ thống (/etc/resolv.conf) nên hoạt động tương thích cả
+Docker network và Kubernetes cluster. Image chạy bằng user không phải root (UID 101),
 nhận upload đến 6 MiB (đủ cho giới hạn file 5 MiB cộng multipart overhead), và
 có health check tại `/health`.
+
+## Kubernetes
+
+Frontend được triển khai trên Kubernetes bằng các manifest trong thư mục `k8s/`:
+- `k8s/frontend-configmap.yaml`: cấu hình `API_UPSTREAM=http://api:8000`.
+- `k8s/frontend-deployment.yaml`: Deployment sử dụng image GHCR, có probes và giới hạn tài nguyên.
+- `k8s/frontend-service.yaml`: Service ClusterIP cổng 8080.
+- `k8s/frontend.yaml`: File all-in-one áp dụng toàn bộ thành phần Frontend.
+
+Xem hướng dẫn chi tiết và runbook tại [k8s/README.md](../k8s/README.md).

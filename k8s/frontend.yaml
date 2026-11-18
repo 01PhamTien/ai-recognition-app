@@ -1,0 +1,117 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  labels:
+    app.kubernetes.io/name: ai-recognition-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: ai-recognition
+    app: ai-recognition-frontend
+data:
+  # Địa chỉ service Backend API trong cluster Kubernetes (staging/production).
+  # Service Backend thực tế trên k3s tên là "api", cổng 8000 trong namespace (ai-recognition-staging).
+  # Có thể dùng tên ngắn "http://api:8000" (cùng namespace) hoặc FQDN: "http://api.ai-recognition-staging.svc.cluster.local:8000"
+  API_UPSTREAM: "http://api:8000"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-recognition-frontend
+  labels:
+    app.kubernetes.io/name: ai-recognition-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: ai-recognition
+    app: ai-recognition-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ai-recognition-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-recognition-frontend
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/part-of: ai-recognition
+        app: ai-recognition-frontend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      # imagePullSecrets su dung khi package tren GHCR duoc dat che do Private (secret ghcr-pull co san tren staging)
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: frontend
+          # Sử dụng image Frontend chứa bản sửa Nginx Kubernetes theo tag build đã xác nhận chạy trên Staging
+          image: ghcr.io/01phamtien/ai-recognition-frontend:build-11
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: API_UPSTREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: frontend-config
+                  key: API_UPSTREAM
+                  optional: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-recognition-frontend
+  labels:
+    app.kubernetes.io/name: ai-recognition-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: ai-recognition
+    app: ai-recognition-frontend
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ai-recognition-frontend
