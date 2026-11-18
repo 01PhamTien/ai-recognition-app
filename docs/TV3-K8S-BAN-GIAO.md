@@ -16,7 +16,7 @@ Công việc: **Chuẩn bị Frontend hiện tại để chạy trên Kubernetes
 - **Tạo Manifests Kubernetes cho Frontend:**
   - `k8s/frontend-configmap.yaml`: Quản lý biến môi trường `API_UPSTREAM: "http://api:8000"` (kết nối service Backend thực tế tên `api`, cổng 8000 trên namespace `ai-recognition-staging`).
   - `k8s/frontend-deployment.yaml`:
-    - Sử dụng image chính thức từ GHCR theo tag commit SHA của PR #17 (chứa bản sửa Nginx Kubernetes): `ghcr.io/01phamtien/ai-recognition-frontend:29ceeaf3b128`.
+    - Sử dụng image chính thức từ GHCR theo tag build-11 đã được Jenkins push và xác nhận chạy thành công trên Staging. Khi tích hợp CI/CD, tag sẽ được thay bằng SHA commit của build.: `ghcr.io/01phamtien/ai-recognition-frontend:build-11`.
     - Cấu hình `imagePullSecrets: [{name: ghcr-pull}]` theo secret đã có sẵn trong staging.
     - Bảo mật: `runAsNonRoot: true`, `runAsUser: 101`, `allowPrivilegeEscalation: false`.
     - Probes: `livenessProbe` và `readinessProbe` trên path `/health` cổng 8080.

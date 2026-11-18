@@ -240,7 +240,7 @@ Dockerfile multi-stage build static assets bằng Node.js và phục vụ qua Ng
 ### Triển khai Frontend trên Kubernetes
 
 Manifest triển khai Frontend nằm trong thư mục `k8s/`:
-- Image chính thức: `ghcr.io/01phamtien/ai-recognition-frontend:latest` (publish bởi Jenkins).
+- Image khởi tạo đã xác nhận trên Staging: `ghcr.io/01phamtien/ai-recognition-frontend:build-11`. Jenkins hiện publish image theo tag SHA của commit được build; khi tích hợp CI/CD, manifest sẽ được cập nhật theo SHA tương ứng, không sử dụng `latest`.
 - Cấu hình runtime: `API_UPSTREAM=http://api:8000` quản lý qua ConfigMap.
 - Liveness/Readiness probes tại `GET /health` cổng 8080.
 - Service ClusterIP cổng 8080, sẵn sàng tích hợp với Ingress của TV4 (Định).

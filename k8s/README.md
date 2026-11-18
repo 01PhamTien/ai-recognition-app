@@ -15,7 +15,7 @@ Thư mục này chứa các manifest Kubernetes cho thành phần **Frontend (TV
 
 | Thông số | Giá trị cấu hình | Ghi chú |
 |---|---|---|
-| **Image** | `ghcr.io/01phamtien/ai-recognition-frontend:29ceeaf3b128` | Tag commit SHA 12 ký tự của PR #17 chứa bản sửa Nginx Kubernetes |
+| **Image** | `ghcr.io/01phamtien/ai-recognition-frontend:build-11` | Tag Jenkins build-11 đã được push và xác nhận chạy thành công trên Staging. CI/CD sẽ cập nhật tag này thành SHA commit của build sau khi tích hợp pipeline. |
 | **Cổng Container** | `8080` (HTTP) | Nginx unprivileged chạy trên cổng 8080 |
 | **User bảo mật** | `UID: 101` (`nginx`), `runAsNonRoot: true` | Không chạy quyền root, `allowPrivilegeEscalation: false` |
 | **Liveness Probe** | `GET /health` trên cổng 8080 | Kiểm tra tiến trình Nginx còn sống |

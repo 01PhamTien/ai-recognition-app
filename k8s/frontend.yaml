@@ -52,8 +52,8 @@ spec:
         - name: ghcr-pull
       containers:
         - name: frontend
-          # Sử dụng image Frontend chứa bản sửa Nginx Kubernetes theo tag commit SHA của PR #17
-          image: ghcr.io/01phamtien/ai-recognition-frontend:29ceeaf3b128
+          # Sử dụng image Frontend chứa bản sửa Nginx Kubernetes theo tag build đã xác nhận chạy trên Staging
+          image: ghcr.io/01phamtien/ai-recognition-frontend:build-11
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
