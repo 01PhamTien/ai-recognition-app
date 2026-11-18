@@ -35,8 +35,8 @@ spec:
         - name: ghcr-pull
       containers:
         - name: frontend
-          # Su dung image da publish tren GHCR theo tag commit SHA 12 ky tu tu pipeline Jenkins
-          image: ghcr.io/01phamtien/ai-recognition-frontend:72405d63cbfe
+          # Sử dụng image Frontend chứa bản sửa Nginx Kubernetes theo tag commit SHA của PR #17
+          image: ghcr.io/01phamtien/ai-recognition-frontend:29ceeaf3b128
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
