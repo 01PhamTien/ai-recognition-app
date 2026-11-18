@@ -1,3 +1,32 @@
+// Telegram credentials are stored in Jenkins, never in this repository.
+// Notification errors must not change the CI/CD build result.
+def notifyTelegram(String status, String detail) {
+    try {
+        withCredentials([
+            string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN'),
+            string(credentialsId: 'telegram-chat-id', variable: 'TELEGRAM_CHAT_ID')
+        ]) {
+            withEnv([
+                "TELEGRAM_STATUS=${status}",
+                "TELEGRAM_DETAIL=${detail}"
+            ]) {
+                sh '''#!/bin/sh
+set +x
+MESSAGE=$(printf 'AI Recognition CI/CD: %s\n%s\nJob: %s\nBuild: #%s\nImage: %s\nJenkins: %s' \
+  "$TELEGRAM_STATUS" "$TELEGRAM_DETAIL" "$JOB_NAME" "$BUILD_NUMBER" "${IMAGE_TAG:-N/A}" "${BUILD_URL:-N/A}")
+curl --fail --silent --show-error --max-time 15 --retry 2 \
+  --request POST \
+  --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
+  --data-urlencode "text=$MESSAGE" \
+  "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" > /dev/null
+'''
+            }
+        }
+    } catch (Exception error) {
+        echo "Khong gui duoc Telegram notification; giu nguyen ket qua CI/CD. (${error.getClass().getSimpleName()})"
+    }
+}
+
 pipeline {
     agent any
 
@@ -142,9 +171,15 @@ pipeline {
     post {
         success {
             echo 'CI thanh cong: lint, unit test, build image va security scan deu dat.'
+            script {
+                notifyTelegram('SUCCESS', 'Deploy Frontend Staging thanh cong.')
+            }
         }
         failure {
             echo 'CI that bai. Mo Console Output de xem stage va loi cu the.'
+            script {
+                notifyTelegram('FAILURE', 'Pipeline that bai (co the do CI hoac deploy). Xem Jenkins de biet chi tiet.')
+            }
         }
         always {
             echo "Ket thuc build cho image tag ${IMAGE_TAG}"
