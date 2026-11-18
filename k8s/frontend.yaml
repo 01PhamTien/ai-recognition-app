@@ -47,9 +47,14 @@ spec:
         runAsUser: 101
         runAsGroup: 101
         fsGroup: 101
+      # imagePullSecrets su dung khi package tren GHCR duoc dat che do Private
+      # Tao secret bang lenh: kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=<USER> --docker-password=<TOKEN>
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: frontend
-          image: ghcr.io/01phamtien/ai-recognition-frontend:latest
+          # Su dung image da publish tren GHCR theo tag commit SHA 12 ky tu tu pipeline Jenkins
+          image: ghcr.io/01phamtien/ai-recognition-frontend:72405d63cbfe
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

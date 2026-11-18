@@ -16,7 +16,8 @@ Công việc: **Chuẩn bị Frontend hiện tại để chạy trên Kubernetes
 - **Tạo Manifests Kubernetes cho Frontend:**
   - `k8s/frontend-configmap.yaml`: Quản lý biến môi trường `API_UPSTREAM: "http://ai-recognition-api:8000"`.
   - `k8s/frontend-deployment.yaml`:
-    - Sử dụng image chính thức từ GHCR: `ghcr.io/01phamtien/ai-recognition-frontend:latest`.
+    - Sử dụng image chính thức từ GHCR theo tag commit SHA đã publish: `ghcr.io/01phamtien/ai-recognition-frontend:72405d63cbfe`.
+    - Hỗ trợ `imagePullSecrets: [{name: ghcr-secret}]` cho trường hợp package Private.
     - Bảo mật: `runAsNonRoot: true`, `runAsUser: 101`, `allowPrivilegeEscalation: false`.
     - Probes: `livenessProbe` và `readinessProbe` trên path `/health` cổng 8080.
     - Tài nguyên: `requests` (50m CPU, 64Mi RAM) và `limits` (200m CPU, 128Mi RAM).

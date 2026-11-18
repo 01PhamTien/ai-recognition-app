@@ -15,38 +15,58 @@ Thư mục này chứa các manifest Kubernetes cho thành phần **Frontend (TV
 
 | Thông số | Giá trị cấu hình | Ghi chú |
 |---|---|---|
-| **Image** | `ghcr.io/01phamtien/ai-recognition-frontend:latest` | Tự động build và push từ pipeline CI Jenkins |
+| **Image** | `ghcr.io/01phamtien/ai-recognition-frontend:72405d63cbfe` | Tag commit SHA 12 ký tự đã build/push bởi Jenkins (`72405d63cbfe` hoặc `latest`) |
 | **Cổng Container** | `8080` (HTTP) | Nginx unprivileged chạy trên cổng 8080 |
 | **User bảo mật** | `UID: 101` (`nginx`), `runAsNonRoot: true` | Không chạy quyền root, `allowPrivilegeEscalation: false` |
 | **Liveness Probe** | `GET /health` trên cổng 8080 | Kiểm tra tiến trình Nginx còn sống |
 | **Readiness Probe** | `GET /health` trên cổng 8080 | Kiểm tra Pod sẵn sàng nhận traffic |
 | **Resource Requests** | CPU: `50m`, Memory: `64Mi` | Mức đảm bảo tối thiểu |
 | **Resource Limits** | CPU: `200m`, Memory: `128Mi` | Giới hạn tối đa tránh chiếm dụng tài nguyên cluster |
+| **imagePullSecrets** | `ghcr-secret` | Cần thiết khi package trên GitHub Packages ở chế độ Private |
 
 ---
 
 ## 3. Cơ chế cấu hình URL API (Build-time & Runtime)
 
-Để đảm bảo Frontend chạy ổn định trong mọi môi trường và **không hardcode localhost**, hệ thống hỗ trợ 2 cơ chế:
+> [!IMPORTANT]
+> **Lưu ý kiến trúc đặc biệt quan trọng về DNS Kubernetes:**
+> Trình duyệt web của người dùng chạy trên máy cá nhân/máy khách (ngoài cluster). Trình duyệt **KHÔNG THỂ** phân giải tên miền DNS nội bộ dạng `*.svc.cluster.local` (ví dụ: `http://ai-recognition-api.default.svc.cluster.local:8000`). Nếu SPA cố gắng gọi trực tiếp URL nội bộ này, trình duyệt sẽ lập tức báo lỗi `ERR_NAME_NOT_RESOLVED`. Đồng thời, **tuyệt đối không hardcode `localhost`** cho môi trường cluster.
+
+Để giải quyết vấn đề trên, hệ thống hỗ trợ 2 cơ chế:
 
 1. **Runtime (Khuyến nghị cho Kubernetes & Docker):**
-   - Ứng dụng SPA gọi API theo đường dẫn tương đối (cùng origin): `/jobs`.
-   - Nginx nhận request `/jobs` và reverse-proxy tới biến môi trường `API_UPSTREAM`.
-   - Trong Kubernetes, `API_UPSTREAM` được quản lý bởi `frontend-config` ConfigMap:
-     ```yaml
-     API_UPSTREAM: "http://ai-recognition-api:8000"
-     ```
+   - Ứng dụng SPA luôn gọi API theo đường dẫn tương đối (same-origin): `/jobs`.
+   - Nginx trong Pod Frontend (nằm bên trong cluster) nhận request `/jobs` từ trình duyệt và đứng ra làm reverse-proxy chuyển tiếp tới `API_UPSTREAM`.
+   - Vì Nginx chạy bên trong cluster nên Nginx phân giải được tên service nội bộ `http://ai-recognition-api:8000` thông qua CoreDNS.
+   - Biến `API_UPSTREAM` được quản lý bởi `frontend-config` ConfigMap theo từng môi trường (Staging / Production):
+     - Môi trường Dev/Cluster mặc định: `http://ai-recognition-api:8000`
+     - Môi trường Staging riêng: `http://ai-recognition-api-staging:8000`
+     - Khác namespace: `http://ai-recognition-api.<namespace>.svc.cluster.local:8000`
    - Nhờ vậy:
      - Trình duyệt người dùng không cần biết IP nội bộ của Backend.
      - Hoàn toàn **không bị lỗi CORS** vì frontend và API cùng origin tại trình duyệt.
      - Khi đổi tên service hoặc namespace backend, chỉ cần sửa ConfigMap và restart Pod, không cần build lại image.
 
 2. **Build-time:**
-   - Khi cần trỏ thẳng tới một API Gateway hoặc domain bên ngoài độc lập, truyền tham số build:
+   - Khi cần trỏ thẳng tới một API Gateway hoặc domain Ingress bên ngoài độc lập, truyền tham số build:
      ```bash
      docker build -f frontend/Dockerfile --build-arg VITE_API_BASE_URL=https://api.mycluster.domain ./frontend
      ```
    - Mặc định trong bản build production (`import.meta.env.PROD`), nếu không truyền `VITE_API_BASE_URL` thì giá trị sẽ tự động là `""` (dùng relative path `/jobs`), tuyệt đối không rơi vào `localhost`.
+
+---
+
+## 4. Cấu hình Secret kéo Image từ GHCR (nếu package Private)
+
+Nếu package `ai-recognition-frontend` trên GitHub Packages (GHCR) được đặt ở chế độ Private, tạo secret `ghcr-secret` trước khi deploy:
+
+```bash
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io \
+  --docker-username=<GITHUB_USERNAME> \
+  --docker-password=<GITHUB_PAT_TOKEN> \
+  --docker-email=<EMAIL>
+```
 
 ---
 
