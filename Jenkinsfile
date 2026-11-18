@@ -125,6 +125,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy Frontend - Staging') {
+            steps {
+                echo "CI push thanh cong. Goi CD voi image tag ${env.IMAGE_TAG}"
+                build job: 'ai-recognition-deploy-staging',
+                    parameters: [
+                        string(name: 'IMAGE_TAG', value: env.IMAGE_TAG)
+                    ],
+                    wait: true,
+                    propagate: true
+            }
+        }
     }
 
     post {
