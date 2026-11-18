@@ -7,10 +7,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
-    environment {
-        IMAGE_TAG = "build-${BUILD_NUMBER}"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -21,7 +17,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
                 }
-                echo "Dang kiem tra commit voi image tag ${IMAGE_TAG}"
+                echo "Dang kiem tra commit voi image tag ${env.IMAGE_TAG}"
             }
         }
 
