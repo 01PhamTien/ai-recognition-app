@@ -12,12 +12,12 @@ Công việc: **Chuẩn bị Frontend hiện tại để chạy trên Kubernetes
   - Thêm unit test kiểm tra logic fallback production trong `frontend/src/recognitionApi.test.js`.
 - **Sửa lỗi Nginx DNS resolver trên Kubernetes:**
   - Cập nhật `frontend/nginx.conf`: Loại bỏ dòng `resolver 127.0.0.11` (vốn là DNS nội bộ của Docker Compose không tồn tại trên Kubernetes).
-  - Sử dụng trực tiếp `proxy_pass ${API_UPSTREAM};` để Nginx sử dụng DNS của hệ thống (`/etc/resolv.conf` - CoreDNS trên Kubernetes và Docker DNS trên Compose), giúp Nginx phân giải tên service `ai-recognition-api` mượt mà, không bị lỗi 502 Bad Gateway.
+  - Sử dụng trực tiếp `proxy_pass ${API_UPSTREAM};` để Nginx sử dụng DNS của hệ thống (`/etc/resolv.conf` - CoreDNS trên Kubernetes và Docker DNS trên Compose), giúp Nginx phân giải tên service Backend `api:8000` mượt mà, không bị lỗi 502 Bad Gateway.
 - **Tạo Manifests Kubernetes cho Frontend:**
-  - `k8s/frontend-configmap.yaml`: Quản lý biến môi trường `API_UPSTREAM: "http://ai-recognition-api:8000"`.
+  - `k8s/frontend-configmap.yaml`: Quản lý biến môi trường `API_UPSTREAM: "http://api:8000"` (kết nối service Backend thực tế tên `api`, cổng 8000 trên namespace `ai-recognition-staging`).
   - `k8s/frontend-deployment.yaml`:
     - Sử dụng image chính thức từ GHCR theo tag commit SHA đã publish: `ghcr.io/01phamtien/ai-recognition-frontend:72405d63cbfe`.
-    - Hỗ trợ `imagePullSecrets: [{name: ghcr-secret}]` cho trường hợp package Private.
+    - Cấu hình `imagePullSecrets: [{name: ghcr-pull}]` theo secret đã có sẵn trong staging.
     - Bảo mật: `runAsNonRoot: true`, `runAsUser: 101`, `allowPrivilegeEscalation: false`.
     - Probes: `livenessProbe` và `readinessProbe` trên path `/health` cổng 8080.
     - Tài nguyên: `requests` (50m CPU, 64Mi RAM) và `limits` (200m CPU, 128Mi RAM).
@@ -61,7 +61,7 @@ Kết quả: **18 passed** (18/18 tests pass), bao gồm:
 
 - **TV4 (Định):** Xác nhận thông số Service `ai-recognition-frontend:8080` và path `/` hoặc `/jobs` để cấu hình Ingress của cluster.
 - **TV1 (Tiến):** Review Pull Request liên kết với Issue #16.
-- **TV2 (Sang):** Xác nhận tên Service Backend trong cluster khớp với `API_UPSTREAM: "http://ai-recognition-api:8000"`.
+- **TV2 (Sang):** Đã xác nhận tên Service Backend trong cluster staging là `api`, cổng `8000` (`API_UPSTREAM: "http://api:8000"`).
 
 ---
 

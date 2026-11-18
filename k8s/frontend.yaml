@@ -9,10 +9,10 @@ metadata:
     app.kubernetes.io/part-of: ai-recognition
     app: ai-recognition-frontend
 data:
-  # Địa chỉ service Backend API trong cluster Kubernetes.
-  # Mặc định kết nối tới Service "ai-recognition-api" cổng 8000 trong cùng namespace.
-  # Nếu Backend nằm ở namespace khác, dùng FQDN dạng: http://ai-recognition-api.<namespace>.svc.cluster.local:8000
-  API_UPSTREAM: "http://ai-recognition-api:8000"
+  # Địa chỉ service Backend API trong cluster Kubernetes (staging/production).
+  # Service Backend thực tế trên k3s tên là "api", cổng 8000 trong namespace (ai-recognition-staging).
+  # Có thể dùng tên ngắn "http://api:8000" (cùng namespace) hoặc FQDN: "http://api.ai-recognition-staging.svc.cluster.local:8000"
+  API_UPSTREAM: "http://api:8000"
 
 ---
 apiVersion: apps/v1
@@ -47,10 +47,9 @@ spec:
         runAsUser: 101
         runAsGroup: 101
         fsGroup: 101
-      # imagePullSecrets su dung khi package tren GHCR duoc dat che do Private
-      # Tao secret bang lenh: kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=<USER> --docker-password=<TOKEN>
+      # imagePullSecrets su dung khi package tren GHCR duoc dat che do Private (secret ghcr-pull co san tren staging)
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: ghcr-pull
       containers:
         - name: frontend
           # Su dung image da publish tren GHCR theo tag commit SHA 12 ky tu tu pipeline Jenkins

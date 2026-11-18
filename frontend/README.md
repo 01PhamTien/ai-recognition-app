@@ -85,7 +85,7 @@ có health check tại `/health`.
 ## Kubernetes
 
 Frontend được triển khai trên Kubernetes bằng các manifest trong thư mục `k8s/`:
-- `k8s/frontend-configmap.yaml`: cấu hình `API_UPSTREAM=http://ai-recognition-api:8000`.
+- `k8s/frontend-configmap.yaml`: cấu hình `API_UPSTREAM=http://api:8000`.
 - `k8s/frontend-deployment.yaml`: Deployment sử dụng image GHCR, có probes và giới hạn tài nguyên.
 - `k8s/frontend-service.yaml`: Service ClusterIP cổng 8080.
 - `k8s/frontend.yaml`: File all-in-one áp dụng toàn bộ thành phần Frontend.

@@ -22,7 +22,7 @@ Thư mục này chứa các manifest Kubernetes cho thành phần **Frontend (TV
 | **Readiness Probe** | `GET /health` trên cổng 8080 | Kiểm tra Pod sẵn sàng nhận traffic |
 | **Resource Requests** | CPU: `50m`, Memory: `64Mi` | Mức đảm bảo tối thiểu |
 | **Resource Limits** | CPU: `200m`, Memory: `128Mi` | Giới hạn tối đa tránh chiếm dụng tài nguyên cluster |
-| **imagePullSecrets** | `ghcr-secret` | Cần thiết khi package trên GitHub Packages ở chế độ Private |
+| **imagePullSecrets** | `ghcr-pull` | Đã có sẵn trong namespace `ai-recognition-staging` |
 
 ---
 
@@ -30,18 +30,17 @@ Thư mục này chứa các manifest Kubernetes cho thành phần **Frontend (TV
 
 > [!IMPORTANT]
 > **Lưu ý kiến trúc đặc biệt quan trọng về DNS Kubernetes:**
-> Trình duyệt web của người dùng chạy trên máy cá nhân/máy khách (ngoài cluster). Trình duyệt **KHÔNG THỂ** phân giải tên miền DNS nội bộ dạng `*.svc.cluster.local` (ví dụ: `http://ai-recognition-api.default.svc.cluster.local:8000`). Nếu SPA cố gắng gọi trực tiếp URL nội bộ này, trình duyệt sẽ lập tức báo lỗi `ERR_NAME_NOT_RESOLVED`. Đồng thời, **tuyệt đối không hardcode `localhost`** cho môi trường cluster.
+> Trình duyệt web của người dùng chạy trên máy cá nhân/máy khách (ngoài cluster). Trình duyệt **KHÔNG THỂ** phân giải tên miền DNS nội bộ dạng `*.svc.cluster.local` (ví dụ: `http://api.ai-recognition-staging.svc.cluster.local:8000`). Nếu SPA cố gắng gọi trực tiếp URL nội bộ này, trình duyệt sẽ lập tức báo lỗi `ERR_NAME_NOT_RESOLVED`. Đồng thời, **tuyệt đối không hardcode `localhost`** cho môi trường cluster.
 
 Để giải quyết vấn đề trên, hệ thống hỗ trợ 2 cơ chế:
 
 1. **Runtime (Khuyến nghị cho Kubernetes & Docker):**
    - Ứng dụng SPA luôn gọi API theo đường dẫn tương đối (same-origin): `/jobs`.
    - Nginx trong Pod Frontend (nằm bên trong cluster) nhận request `/jobs` từ trình duyệt và đứng ra làm reverse-proxy chuyển tiếp tới `API_UPSTREAM`.
-   - Vì Nginx chạy bên trong cluster nên Nginx phân giải được tên service nội bộ `http://ai-recognition-api:8000` thông qua CoreDNS.
+   - Vì Nginx chạy bên trong cluster nên Nginx phân giải được tên service nội bộ `http://api:8000` (service Backend tên `api`, cổng `8000`) thông qua CoreDNS.
    - Biến `API_UPSTREAM` được quản lý bởi `frontend-config` ConfigMap theo từng môi trường (Staging / Production):
-     - Môi trường Dev/Cluster mặc định: `http://ai-recognition-api:8000`
-     - Môi trường Staging riêng: `http://ai-recognition-api-staging:8000`
-     - Khác namespace: `http://ai-recognition-api.<namespace>.svc.cluster.local:8000`
+     - Môi trường Staging (cùng namespace `ai-recognition-staging`): `http://api:8000`
+     - Dạng FQDN đầy đủ: `http://api.ai-recognition-staging.svc.cluster.local:8000`
    - Nhờ vậy:
      - Trình duyệt người dùng không cần biết IP nội bộ của Backend.
      - Hoàn toàn **không bị lỗi CORS** vì frontend và API cùng origin tại trình duyệt.
@@ -96,7 +95,7 @@ spec:
                 port:
                   number: 8080
 ```
-*Lưu ý:* Mọi request `/jobs` từ trình duyệt gửi về `ai.example.com/jobs` sẽ đi qua Nginx của Frontend, Nginx tự động chuyển tiếp tới `http://ai-recognition-api:8000` trong mạng nội bộ cluster.
+*Lưu ý:* Mọi request `/jobs` từ trình duyệt gửi về `ai.example.com/jobs` sẽ đi qua Nginx của Frontend, Nginx tự động chuyển tiếp tới `http://api:8000` trong mạng nội bộ cluster.
 
 #### Phương án 2 (Định tuyến tách biệt Path-based tại Ingress):
 Nếu TV4 muốn Ingress phân luồng trực tiếp API và Frontend:
@@ -110,7 +109,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ai-recognition-api
+                name: api
                 port:
                   number: 8000
           - path: /

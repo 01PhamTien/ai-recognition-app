@@ -241,7 +241,7 @@ Dockerfile multi-stage build static assets bằng Node.js và phục vụ qua Ng
 
 Manifest triển khai Frontend nằm trong thư mục `k8s/`:
 - Image chính thức: `ghcr.io/01phamtien/ai-recognition-frontend:latest` (publish bởi Jenkins).
-- Cấu hình runtime: `API_UPSTREAM=http://ai-recognition-api:8000` quản lý qua ConfigMap.
+- Cấu hình runtime: `API_UPSTREAM=http://api:8000` quản lý qua ConfigMap.
 - Liveness/Readiness probes tại `GET /health` cổng 8080.
 - Service ClusterIP cổng 8080, sẵn sàng tích hợp với Ingress của TV4 (Định).
 
