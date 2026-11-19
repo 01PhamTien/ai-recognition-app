@@ -261,4 +261,4 @@ Chi tiết phối hợp Ingress và runbook: [k8s/README.md](k8s/README.md) và 
 3. Mở PR, cần ít nhất một người khác review trước khi merge vào main.
 4. Không tự merge PR, không commit secret, .env thật hoặc model lớn.
 
-<!-- Demo Jenkins webhook trigger -->
+<!-- Demo Jenkins webhook trigger lan 2-->
