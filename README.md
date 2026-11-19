@@ -260,3 +260,5 @@ Chi tiết phối hợp Ingress và runbook: [k8s/README.md](k8s/README.md) và 
 2. Commit theo Conventional Commits, nội dung tiếng Việt.
 3. Mở PR, cần ít nhất một người khác review trước khi merge vào main.
 4. Không tự merge PR, không commit secret, .env thật hoặc model lớn.
+
+<!-- Demo Jenkins webhook trigger -->
