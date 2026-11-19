@@ -72,6 +72,15 @@ pipeline {
                     sh '''
                         npm ci
                         npm test
+                        node - <<'NODE'
+const fs = require('fs');
+const html = fs.readFileSync('index.html', 'utf8');
+if (!html.trimEnd().toLowerCase().endsWith('</html>')) {
+  console.error('HTML validation failed: missing closing </html> tag');
+  process.exit(1);
+}
+console.log('HTML validation passed');
+NODE
                     '''
                 }
             }
